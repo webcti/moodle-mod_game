@@ -89,77 +89,16 @@ class mod_game_mod_form extends moodleform_mod {
             $this->add_intro_editor(true);
         }
 
-        $hasglossary = ($gamekind == 'hangman' || $gamekind == 'cross' ||
-                $gamekind == 'cryptex' || $gamekind == 'sudoku' ||
-                $gamekind == 'hiddenpicture' || $gamekind == 'snakes');
+        $mform->addElement('hidden', 'sourcemodule', 'question');
+        $mform->setType('sourcemodule', PARAM_ALPHA);
 
-        $questionsourceoptions = array();
-        if ($hasglossary) {
-            $questionsourceoptions['glossary'] = get_string('modulename', 'glossary');
-        }
-        $questionsourceoptions['question'] = get_string('sourcemodule_question', 'game');
-        if ($gamekind != 'bookquiz') {
-            $questionsourceoptions['quiz'] = get_string('modulename', 'quiz');
-        }
-        $mform->addElement('select', 'sourcemodule', get_string('sourcemodule', 'game'), $questionsourceoptions);
+        $a = $this->get_array_question_categories( $COURSE->id, $gamekind );
+        $mform->addElement('select', 'questioncategoryid', get_string('sourcemodule_questioncategory', 'game'), $a);
+        $mform->disabledIf('questioncategoryid', 'sourcemodule', 'neq', 'question');
 
-        if ($hasglossary) {
-            $a = array();
-            $sql = "SELECT id,name,globalglossary,course FROM {$CFG->prefix}glossary ".
-            "WHERE course={$COURSE->id} OR globalglossary=1 ORDER BY globalglossary DESC,name";
-            if ($recs = $DB->get_records_sql($sql)) {
-                foreach ($recs as $rec) {
-                    if (($rec->globalglossary != 0) && ($rec->course != $COURSE->id)) {
-                        $rec->name = '*'.$rec->name;
-                    }
-                    $a[$rec->id] = $rec->name;
-                }
-            }
-            $mform->addElement('select', 'glossaryid', get_string('sourcemodule_glossary', 'game'), $a);
-            $mform->disabledIf('glossaryid', 'sourcemodule', 'neq', 'glossary');
-
-            $a = $this->get_array_glossary_categories( $a);
-            $mform->addElement('select', 'glossarycategoryid', get_string('sourcemodule_glossarycategory', 'game'), $a);
-            $mform->disabledIf('glossarycategoryid', 'sourcemodule', 'neq', 'glossary');
-
-            // Only approved.
-            $mform->addElement('selectyesno', 'glossaryonlyapproved', get_string('glossary_only_approved', 'game'));
-            $mform->disabledIf('subcategories', 'sourcemodule', 'neq', 'glossary');
-        }
-
-        // Question Category - Short Answer.
-        if ($gamekind != 'bookquiz') {
-            $a = $this->get_array_question_categories( $COURSE->id, $gamekind );
-            $mform->addElement('select', 'questioncategoryid', get_string('sourcemodule_questioncategory', 'game'), $a);
-            $mform->disabledIf('questioncategoryid', 'sourcemodule', 'neq', 'question');
-
-            // Subcategories.
-            $mform->addElement('selectyesno', 'subcategories', get_string('sourcemodule_include_subcategories', 'game'));
-            $mform->disabledIf('subcategories', 'sourcemodule', 'neq', 'question');
-        }
-
-        // Quiz Category.
-        if ($gamekind != 'bookquiz') {
-            $a = array();
-            if ($recs = $DB->get_records('quiz', array( 'course' => $COURSE->id), 'id,name')) {
-                foreach ($recs as $rec) {
-                    $a[$rec->id] = $rec->name;
-                }
-            }
-            $mform->addElement('select', 'quizid', get_string('sourcemodule_quiz', 'game'), $a);
-            $mform->disabledIf('quizid', 'sourcemodule', 'neq', 'quiz');
-        }
-
-        // Book.
-        if ( $gamekind == 'bookquiz') {
-            $a = array();
-            if ($recs = $DB->get_records('book', array( 'course' => $COURSE->id), 'id,name')) {
-                foreach ($recs as $rec) {
-                    $a[$rec->id] = $rec->name;
-                }
-            }
-            $mform->addElement('select', 'bookid', get_string('sourcemodule_book', 'game'), $a);
-        }
+        // Subcategories.
+        $mform->addElement('selectyesno', 'subcategories', get_string('sourcemodule_include_subcategories', 'game'));
+        $mform->disabledIf('subcategories', 'sourcemodule', 'neq', 'question');
 
         // Common settings to all games.
         $mform->addElement('text', 'maxattempts', get_string('cross_max_attempts', 'game'));
