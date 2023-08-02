@@ -22,6 +22,20 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+function strpos_all($haystack, $needle) {
+    $haystack = mb_str_split($haystack);
+    $positions = array();
+    foreach ($haystack as $key => $character) 
+    {
+        if ($character == $needle) 
+        {
+            $positions[] = $key;
+        }
+    }
+
+    return $positions;
+}
+
 /**
  * Plays the game hangman
  *
@@ -68,6 +82,15 @@ function game_hangman_continue( $cm, $game, $attempt, $hangman, $newletter, $act
             $game->language = game_detectlanguage( $answer);
             $answer = game_upper( $rec->answertext, $game->language);
         }
+
+        # remove accents but keep Ñ
+        $pos = strpos_all($answer, 'Ñ');
+        $answer = iconv('utf-8', 'ascii//TRANSLIT', $answer);
+        $temp = str_split($answer);
+        foreach($pos as $p) {
+            $temp[$p] = "Ñ";
+        }
+        $answer = implode($temp);
 
         $answer2 = $answer;
         if ($game->param7) {
