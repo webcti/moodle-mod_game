@@ -182,13 +182,20 @@ class mod_game_mod_form extends moodleform_mod {
             $mform->setType('param4', PARAM_INT);
             $mform->addElement('text', 'param2', get_string('cross_maxwords', 'game'));
             $mform->setType('param2', PARAM_INT);
-            $mform->addElement('selectyesno', 'param7', get_string('hangman_allowspaces', 'game'));
             $crosslayoutoptions = array();
             $crosslayoutoptions[0] = get_string('cross_layout0', 'game');
             $crosslayoutoptions[1] = get_string('cross_layout1', 'game');
             $mform->addElement('select', 'param3', get_string('cross_layout', 'game'), $crosslayoutoptions);
             $mform->setType('param5', PARAM_INT);
-            $mform->addElement('selectyesno', 'param6', get_string('cross_disabletransformuppercase', 'game'));
+
+            # disable text-transform
+            $mform->addElement('hidden', 'param6', 0);
+            $mform->setType('param6', PARAM_INT);
+
+            # allow white spaces
+            $mform->addElement('hidden', 'param7', 1);
+            $mform->setType('param7', PARAM_INT);
+
             $mform->addElement('text', 'param8', get_string('cross_maxcomputetime', 'game'));
             $mform->setType('param8', PARAM_INT);
         }
@@ -196,11 +203,11 @@ class mod_game_mod_form extends moodleform_mod {
         // Cryptex options.
         if ($gamekind == 'cryptex') {
             $mform->addElement('header', 'cryptex', get_string( 'cryptex_options', 'game'));
-            $mform->addElement('text', 'param1', get_string('cross_maxcols', 'game'));
+            $mform->addElement('text', 'param1', get_string('cryptex_maxcols', 'game'));
             $mform->setType('param1', PARAM_INT);
-            $mform->addElement('text', 'param4', get_string('cross_minwords', 'game'));
+            $mform->addElement('text', 'param4', get_string('cryptex_minwords', 'game'));
             $mform->setType('param4', PARAM_INT);
-            $mform->addElement('text', 'param2', get_string('cross_maxwords', 'game'));
+            $mform->addElement('text', 'param2', get_string('cryptex_maxwords', 'game'));
             $mform->setType('param2', PARAM_INT);
             $mform->addElement('selectyesno', 'param7', get_string('hangman_allowspaces', 'game'));
             $mform->addElement('text', 'param8', get_string('cryptex_maxtries', 'game'));
