@@ -262,7 +262,7 @@ function game_user_outline($course, $user, $mod, $game) {
 
         $result = new stdClass;
         if ((float)$grade->score) {
-            $result->info = get_string('grade').':&nbsp;'.round($grade->score * $game->grade, $game->decimalpoints).' '.
+            $result->info = get_string('gradenoun').':&nbsp;'.round($grade->score * $game->grade, $game->decimalpoints).' '.
                             get_string('percent', 'game').':&nbsp;'.round(100 * $grade->score, $game->decimalpoints).' %';
         }
         $result->time = $grade->timemodified;
@@ -285,7 +285,7 @@ function game_user_complete($course, $user, $mod, $game) {
 
     if ($attempts = $DB->get_records_select('game_attempts', "userid='$user->id' AND gameid='$game->id'", null, 'attempt ASC')) {
         if ($game->grade && $grade = $DB->get_record('game_grades', array( 'userid' => $user->id, 'gameid' => $game->id))) {
-            echo get_string('grade').': '.game_format_score( $game, $grade->score).'/'.$game->grade.'<br />';
+            echo get_string('gradenoun').': '.game_format_score( $game, $grade->score).'/'.$game->grade.'<br />';
         }
         foreach ($attempts as $attempt) {
             echo get_string('attempt', 'game').' '.$attempt->attempt.': ';
@@ -702,6 +702,12 @@ function game_reset_gradebook($courseid, $type='') {
  * @return bool True if quiz supports feature
  */
 function game_supports($feature) {
+    global $CFG;
+    if ($CFG->branch >= 400) {
+        if ($feature == FEATURE_MOD_PURPOSE) {
+            return MOD_PURPOSE_ASSESSMENT;
+        }
+    }
     switch($feature) {
         case FEATURE_GRADE_HAS_GRADE:
             return true;
@@ -809,7 +815,7 @@ function game_format_score($game, $score) {
  * @return foat score
  */
 function game_format_grade($game, $grade) {
-    return format_float($grade, $game->decimalpoints);
+    return format_float($grade, $game->decimalpoints == null ? 2 : $game->decimalpoints);
 }
 
 /**
@@ -1205,7 +1211,6 @@ if (defined( 'GAME_MOODLE_401')) {
     function mod_game_get_course_content_items(\core_course\local\entity\content_item $defaultmodulecontentitem, \stdClass $user,
         \stdClass $course) {
 
-        $config = get_config('game');
         $types = array();
         mod_game_get_course_content_items_type( $defaultmodulecontentitem, $user, $course, $types, 'hangman');
         mod_game_get_course_content_items_type( $defaultmodulecontentitem, $user, $course, $types, 'cryptex');
@@ -1213,9 +1218,12 @@ if (defined( 'GAME_MOODLE_401')) {
         mod_game_get_course_content_items_type( $defaultmodulecontentitem, $user, $course, $types, 'hiddenpicture');
         mod_game_get_course_content_items_type( $defaultmodulecontentitem, $user, $course, $types, 'millionaire');
         mod_game_get_course_content_items_type( $defaultmodulecontentitem, $user, $course, $types, 'sudoku');
+        mod_game_get_course_content_items_type( $defaultmodulecontentitem, $user, $course, $types, 'bookquiz');
+        mod_game_get_course_content_items_type( $defaultmodulecontentitem, $user, $course, $types, 'snakes');
 
         return $types;
     }
+  
     /**
      * Helper function for mod_game_get_course_content_items.
      * It is called for every game of module Game.
@@ -1228,16 +1236,15 @@ if (defined( 'GAME_MOODLE_401')) {
      */
     function mod_game_get_course_content_items_type(\core_course\local\entity\content_item $defaultmodulecontentitem,
          \stdClass $user, \stdClass $course, &$types, $kind) {
-        global $OUTPUT, $CFG, $DB;
+        global $OUTPUT;
 
-        $name = 'hide'.$type;
+        $name = 'hide' . $kind;
+        $config = get_config('game');
         $hide = ( isset( $config->$name) ? ($config->$name != 0) : false);
         if ($hide) {
             return;
         }
         $type = new stdClass;
-        $type->archetype = MOD_CLASS_ACTIVITY;
-        $type->type = "game&type=".$kind;
         $type->name = preg_replace('/.*type=/', '', $type->type);
         $type->title = get_string('pluginname', 'game').' - '.get_string('game_'.$kind, 'game');
         $type->link = new moodle_url('/course/modedit.php',
@@ -1301,7 +1308,8 @@ function mod_game_pluginfile($course, $cm, $context, $filearea, $args, $forcedow
         $rec = $DB->get_record( 'files', $a);
 
         $fs = get_file_storage();
-        if (!$file = $fs->get_file_by_hash($rec->pathnamehash) || $file->is_directory()) {
+        $file = $fs->get_file_by_hash($rec->pathnamehash);
+        if (!$file || $file->is_directory()) {
             return false;
         }
 
